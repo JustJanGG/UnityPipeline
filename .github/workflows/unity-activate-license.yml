@@ -1,0 +1,19 @@
+name: Unity – Activate License
+
+on:
+  workflow_dispatch:
+
+jobs:
+  activateLicense:
+    name: Request Unity License
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Activate Unity license
+        uses: game-ci/unity-activate@v2
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
