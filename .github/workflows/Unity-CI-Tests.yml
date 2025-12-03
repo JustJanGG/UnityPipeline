@@ -1,18 +1,23 @@
-name: Unity CI – Test and Build (Cached)
+name: Unity CI – Test (Edit & Play) and Build (Cached)
 
 on:
-  workflow_dispatch: {}  
+  workflow_dispatch: {} 
 
 jobs:
   test:
-    name: Run Unity Tests
+    name: Run Unity ${{ matrix.testMode }} tests
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode: [EditMode, PlayMode]
+
     env:
-      UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }} 
+      UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}   
       UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
       UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-      UNITY_VERSION:  6000.0.60f1               
+      UNITY_VERSION:  6000.0.60f1                   
 
     steps:
       - name: Checkout repository
@@ -22,34 +27,35 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          key: Library-${{ matrix.testMode }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
+            Library-${{ matrix.testMode }}-
             Library-
 
-      - name: Run EditMode tests
+      - name: Run ${{ matrix.testMode }} tests
         uses: game-ci/unity-test-runner@v4
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           projectPath: .
-          testMode: EditMode
-          artifactsPath: test-results
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: test-results/${{ matrix.testMode }}
 
-      - name: Upload test results
+      - name: Upload ${{ matrix.testMode }} test results
         uses: actions/upload-artifact@v4
         with:
-          name: UnityTestResults
-          path: test-results
+          name: UnityTestResults-${{ matrix.testMode }}
+          path: test-results/${{ matrix.testMode }}
 
   build:
     name: Build Project
     runs-on: ubuntu-latest
-    needs: test       # Only run if tests succeed
+    needs: test   # Only run if ALL test matrix jobs succeed
 
     env:
       UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
       UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
       UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-      UNITY_VERSION:  6000.0.60f1              
+      UNITY_VERSION:  6000.0.60f1                   
 
     steps:
       - name: Checkout repository
@@ -59,17 +65,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          key: Library-Build-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
+            Library-Build-
             Library-
 
       - name: Build project
         uses: game-ci/unity-builder@v4
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: StandaloneWindows64 
+          targetPlatform: StandaloneWindows64      
           projectPath: .
-          buildName: CIwithTests
+          buildName: TestedBuild
           buildsPath: build
 
       - name: Upload build artifact
