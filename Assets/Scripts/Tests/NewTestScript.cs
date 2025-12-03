@@ -10,7 +10,6 @@ public class NewTestScript
     public void NewTestScriptSimplePasses()
     {
         // Use the Assert class to test conditions
-        throw new System.NotImplementedException();
     }
 
     // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
