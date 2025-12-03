@@ -1,0 +1,50 @@
+name: Unity CI
+
+on: 
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build project
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout the repository
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # 2. Cache the Library folder
+      - uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      # 3. Test Runner (Optional)
+      #- name: Run tests
+      # uses: game-ci/unity-test-runner@v4
+      #  env:
+      #    UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      #    UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      #    UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      #  with:
+      #    githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4. Builder
+      # Builds the project for the specified platform
+      - name: Build project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          # UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }} (for non free licenses)
+        with:
+          targetPlatform: StandaloneWindows64 
+          
+      # 5. Upload Artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Build-StandaloneWindows64
+          path: build/StandaloneWindows64
